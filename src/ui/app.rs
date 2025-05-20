@@ -124,11 +124,21 @@ impl App {
 
     fn render<B: Backend>(&self, frame: &mut ratatui::Frame<B>) {
         match self.current_layout {
-            LayoutView::Default => crate::ui::layout::render(frame, &self.system, &self.config, &self.theme),
-            LayoutView::GraphView => crate::ui::layout::render_with_graphs(frame, &self.system, &self.config, &self.theme),
-            LayoutView::CpuFocused => crate::ui::layout::render_cpu_focused(frame, &self.system, &self.config, &self.theme),
-            LayoutView::MemoryFocused => crate::ui::layout::render_memory_focused(frame, &self.system, &self.config, &self.theme),
-            LayoutView::Compact => crate::ui::layout::render_compact(frame, &self.system, &self.config, &self.theme),
+            LayoutView::Default => crate::ui::layout::render(
+                frame, &self.system, &self.config, &self.theme, "Default View"
+            ),
+            LayoutView::GraphView => crate::ui::layout::render_with_graphs(
+                frame, &self.system, &self.config, &self.theme, "Graph View"
+            ),
+            LayoutView::CpuFocused => crate::ui::layout::render_cpu_focused(
+                frame, &self.system, &self.config, &self.theme, "CPU Focus"
+            ),
+            LayoutView::MemoryFocused => crate::ui::layout::render_memory_focused(
+                frame, &self.system, &self.config, &self.theme, "Memory Focus"
+            ),
+            LayoutView::Compact => crate::ui::layout::render_compact(
+                frame, &self.system, &self.config, &self.theme, "Compact View"
+            ),
         }
     }
 }

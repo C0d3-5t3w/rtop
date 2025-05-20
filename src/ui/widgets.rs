@@ -1,10 +1,10 @@
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Modifier, Style, Color},
-    text::Span,
+    text::{Span, Line},
     widgets::{
         Block, Borders, Gauge, Row, Table,
-        Chart, Dataset, GraphType, Axis,
+        Chart, Dataset, GraphType, Axis, Paragraph,
     },
     symbols,
     Frame,
@@ -446,6 +446,55 @@ pub fn render_network_graph<B: ratatui::backend::Backend>(
         );
     
     f.render_widget(chart, area);
+}
+
+// Status Bar Widget for displaying controls
+pub fn render_status_bar<B: ratatui::backend::Backend>(
+    f: &mut Frame<B>,
+    area: Rect,
+    current_layout: &str,
+) {
+    let controls = vec![
+        ("q", "Quit"),
+        ("c", "Cycle Theme"),
+        ("g", "Graph View"),
+        ("1-5", "Change Layout"),
+        ("", current_layout),
+    ];
+
+    let mut control_spans = Vec::new();
+    for (key, desc) in controls {
+        if !key.is_empty() {
+            control_spans.push(Span::styled(
+                format!("[{}]", key),
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            ));
+            control_spans.push(Span::raw(" "));
+            control_spans.push(Span::styled(
+                format!("{}", desc),
+                Style::default().fg(Color::White)
+            ));
+            control_spans.push(Span::raw("  "));
+        } else if !desc.is_empty() {
+            // For the layout name
+            control_spans.push(Span::styled(
+                format!("Current: {}", desc),
+                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+            ));
+        }
+    }
+    
+    let status_line = Line::from(control_spans);
+    
+    let status_bar = Block::default()
+        .borders(Borders::TOP)
+        .border_style(Style::default().fg(Color::DarkGray));
+    
+    let paragraph = Paragraph::new(status_line)
+        .block(status_bar)
+        .alignment(ratatui::layout::Alignment::Center);
+    
+    f.render_widget(paragraph, area);
 }
 
 // Helper function to format bytes

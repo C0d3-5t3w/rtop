@@ -15,9 +15,19 @@ pub fn render<B: Backend>(
     system: &SystemState,
     config: &Config,
     theme: &Theme,
+    layout_name: &str,
 ) {
-    // Create the main vertical layout
+    // Split the screen into main content and status bar
     let main_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Min(5),       // Main content
+            Constraint::Length(2),    // Status bar
+        ].as_ref())
+        .split(frame.size());
+    
+    // Create the main vertical layout within the content area
+    let content_chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
@@ -27,27 +37,30 @@ pub fn render<B: Backend>(
             Constraint::Length(8),  // Network
             Constraint::Min(10),    // Processes (takes remaining space)
         ].as_ref())
-        .split(frame.size());
+        .split(main_chunks[0]);
 
     // Render each widget based on layout configuration
     if config.layout.show_cpu {
-        widgets::render_cpu_widget(frame, main_chunks[0], &system.cpu, theme);
+        widgets::render_cpu_widget(frame, content_chunks[0], &system.cpu, theme);
     }
 
     if config.layout.show_memory {
-        widgets::render_memory_widget(frame, main_chunks[1], &system.memory, theme);
+        widgets::render_memory_widget(frame, content_chunks[1], &system.memory, theme);
     }
 
     if config.layout.show_disk {
-        widgets::render_disk_widget(frame, main_chunks[2], &system.disk, theme);
+        widgets::render_disk_widget(frame, content_chunks[2], &system.disk, theme);
     }
 
     if config.layout.show_network {
-        widgets::render_network_widget(frame, main_chunks[3], &system.network, theme);
+        widgets::render_network_widget(frame, content_chunks[3], &system.network, theme);
     }
 
     // Always show processes, but details might be configurable
-    widgets::render_process_widget(frame, main_chunks[4], &system.processes, config, theme);
+    widgets::render_process_widget(frame, content_chunks[4], &system.processes, config, theme);
+    
+    // Render the status bar at the bottom
+    widgets::render_status_bar(frame, main_chunks[1], layout_name);
 }
 
 // Alternative layouts that can be toggled
@@ -57,18 +70,32 @@ pub fn render_cpu_focused<B: Backend>(
     system: &SystemState,
     config: &Config,
     theme: &Theme,
+    layout_name: &str,
 ) {
-    let chunks = Layout::default()
+    // Split for main content and status bar
+    let main_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Min(5),       // Main content
+            Constraint::Length(2),    // Status bar
+        ].as_ref())
+        .split(frame.size());
+    
+    // Content layout
+    let content_chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
             Constraint::Percentage(70),  // CPU (large)
             Constraint::Percentage(30),  // Processes (smaller)
         ].as_ref())
-        .split(frame.size());
+        .split(main_chunks[0]);
 
-    widgets::render_cpu_widget(frame, chunks[0], &system.cpu, theme);
-    widgets::render_process_widget(frame, chunks[1], &system.processes, config, theme);
+    widgets::render_cpu_widget(frame, content_chunks[0], &system.cpu, theme);
+    widgets::render_process_widget(frame, content_chunks[1], &system.processes, config, theme);
+    
+    // Status bar
+    widgets::render_status_bar(frame, main_chunks[1], layout_name);
 }
 
 pub fn render_memory_focused<B: Backend>(
@@ -76,18 +103,32 @@ pub fn render_memory_focused<B: Backend>(
     system: &SystemState,
     config: &Config,
     theme: &Theme,
+    layout_name: &str,
 ) {
-    let chunks = Layout::default()
+    // Split for main content and status bar
+    let main_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Min(5),       // Main content
+            Constraint::Length(2),    // Status bar
+        ].as_ref())
+        .split(frame.size());
+    
+    // Content layout
+    let content_chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
             Constraint::Percentage(70),  // Memory (large)
             Constraint::Percentage(30),  // Processes (smaller)
         ].as_ref())
-        .split(frame.size());
+        .split(main_chunks[0]);
 
-    widgets::render_memory_widget(frame, chunks[0], &system.memory, theme);
-    widgets::render_process_widget(frame, chunks[1], &system.processes, config, theme);
+    widgets::render_memory_widget(frame, content_chunks[0], &system.memory, theme);
+    widgets::render_process_widget(frame, content_chunks[1], &system.processes, config, theme);
+    
+    // Status bar
+    widgets::render_status_bar(frame, main_chunks[1], layout_name);
 }
 
 pub fn render_compact<B: Backend>(
@@ -95,7 +136,18 @@ pub fn render_compact<B: Backend>(
     system: &SystemState,
     config: &Config,
     theme: &Theme,
+    layout_name: &str,
 ) {
+    // Split for main content and status bar
+    let main_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Min(5),       // Main content
+            Constraint::Length(2),    // Status bar
+        ].as_ref())
+        .split(frame.size());
+    
+    // Content layout
     let horizontal_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .margin(1)
@@ -103,7 +155,7 @@ pub fn render_compact<B: Backend>(
             Constraint::Percentage(50),
             Constraint::Percentage(50),
         ].as_ref())
-        .split(frame.size());
+        .split(main_chunks[0]);
 
     let left_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -128,24 +180,37 @@ pub fn render_compact<B: Backend>(
     
     widgets::render_disk_widget(frame, right_chunks[0], &system.disk, theme);
     widgets::render_network_widget(frame, right_chunks[1], &system.network, theme);
+    
+    // Status bar
+    widgets::render_status_bar(frame, main_chunks[1], layout_name);
 }
 
-// Add a new layout that includes graphs
 pub fn render_with_graphs<B: Backend>(
     frame: &mut Frame<B>,
     system: &SystemState,
     config: &Config,
     theme: &Theme,
+    layout_name: &str,
 ) {
-    // Create a 2x2 grid layout for graphs and data
+    // Split for main content and status bar
     let main_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Min(5),       // Main content
+            Constraint::Length(2),    // Status bar
+        ].as_ref())
+        .split(frame.size());
+    
+    // Content layout    
+    // Create a 2x2 grid layout for graphs and data
+    let content_chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
             Constraint::Percentage(50),  // Top half
             Constraint::Percentage(50),  // Bottom half
         ].as_ref())
-        .split(frame.size());
+        .split(main_chunks[0]);
     
     let top_chunks = Layout::default()
         .direction(Direction::Horizontal)
@@ -153,7 +218,7 @@ pub fn render_with_graphs<B: Backend>(
             Constraint::Percentage(50),  // CPU
             Constraint::Percentage(50),  // Memory
         ].as_ref())
-        .split(main_chunks[0]);
+        .split(content_chunks[0]);
     
     let bottom_chunks = Layout::default()
         .direction(Direction::Horizontal)
@@ -161,11 +226,14 @@ pub fn render_with_graphs<B: Backend>(
             Constraint::Percentage(50),  // Network
             Constraint::Percentage(50),  // Processes
         ].as_ref())
-        .split(main_chunks[1]);
+        .split(content_chunks[1]);
     
     // Render the graphs and tables
     widgets::render_cpu_graph(frame, top_chunks[0], &system.cpu, theme);
     widgets::render_memory_graph(frame, top_chunks[1], &system.memory, theme);
     widgets::render_network_graph(frame, bottom_chunks[0], &system.network, theme);
     widgets::render_process_widget(frame, bottom_chunks[1], &system.processes, config, theme);
+    
+    // Status bar
+    widgets::render_status_bar(frame, main_chunks[1], layout_name);
 }
