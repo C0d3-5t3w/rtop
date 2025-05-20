@@ -80,6 +80,7 @@ impl Theme {
         self.colors.get(name).copied().unwrap_or(Color::White)
     }
 
+    #[allow(dead_code)]
     pub fn get_name(&self) -> &str {
         &self.name
     }
@@ -116,6 +117,7 @@ impl Theme {
         }
     }
 
+    #[allow(dead_code)]
     pub fn disk_color(&self, usage: f32) -> Color {
         if usage < 70.0 {
             self.get_color("disk_low")
@@ -130,14 +132,17 @@ impl Theme {
         self.get_color("header")
     }
 
+    #[allow(dead_code)]
     pub fn border_color(&self) -> Color {
         self.get_color("border")
     }
 
+    #[allow(dead_code)]
     pub fn background_color(&self) -> Color {
         self.get_color("background")
     }
 
+    #[allow(dead_code)]
     pub fn foreground_color(&self) -> Color {
         self.get_color("foreground")
     }

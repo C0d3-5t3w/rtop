@@ -355,7 +355,7 @@ pub fn render_network_graph<B: ratatui::backend::Backend>(
     f: &mut Frame<B>,
     area: Rect,
     network: &NetworkState,
-    theme: &Theme,
+    _theme: &Theme,  // Renamed theme to _theme to show it's intentionally unused
 ) {
     let block = Block::default()
         .title("Network Traffic")
