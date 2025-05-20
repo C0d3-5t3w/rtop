@@ -1,0 +1,56 @@
+# rtop configuration
+
+# Update interval in milliseconds
+update_interval: 1000
+
+# UI Theme (default, dark, light, custom)
+theme: "default"
+
+# Layout configuration
+layout:
+  show_cpu: true
+  show_memory: true
+  show_network: true
+  show_disk: true
+  show_process_details: true
+
+# Process sorting options (cpu, memory)
+sort_by: "cpu"
+
+# Process filters (list of regex patterns to include or exclude)
+filters:
+  # Example: Include only processes with "rust" in their name
+  # - name: "rust"
+  #   include: true
+  
+  # Example: Exclude processes with "cache" in their name
+  # - name: "cache"
+  #   include: false
+
+# Custom theme colors (used when theme is set to "custom")
+custom_theme:
+  background: "black"
+  foreground: "white"
+  header: "cyan"
+  cpu_low: "green"
+  cpu_medium: "yellow"
+  cpu_high: "red"
+  memory_low: "green"
+  memory_medium: "yellow"
+  memory_high: "red"
+  disk_low: "green"
+  disk_medium: "yellow"
+  disk_high: "red"
+  network_rx: "blue"
+  network_tx: "magenta"
+  process_selected: "cyan"
+  border: "gray"
+  tab_active: "cyan"
+  tab_inactive: "gray"
+
+# Keyboard shortcuts (these are defaults and cannot be changed in this version)
+# q: quit
+# c: cycle through color themes
+# 1-4: switch between layout views
+# h/l: navigate tabs
+# j/k: scroll through lists
