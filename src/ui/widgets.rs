@@ -440,6 +440,8 @@ pub fn render_status_bar<B: ratatui::backend::Backend>(
         ("g", "Graph View"),
         ("1-5", "Change Layout"),
         ("", current_layout),
+        ("", ""),
+        ("Made by:", "C0d3-5t3w"),
     ];
 
     let mut control_spans = Vec::new();
