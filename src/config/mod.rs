@@ -61,7 +61,7 @@ impl Config {
                 if path.exists() {
                     match fs::read_to_string(&path) {
                         Ok(content) => {
-                            if ext == "toml" {
+                            if *ext == "toml" {
                                 if let Ok(config) = toml::from_str(&content) {
                                     return Ok(config);
                                 }

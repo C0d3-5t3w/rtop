@@ -1,11 +1,15 @@
 use sysinfo::{CpuExt, System, SystemExt};
 use std::time::Duration;
+use std::collections::VecDeque;
+
+const HISTORY_SIZE: usize = 100; // Store last 100 data points
 
 pub struct CpuState {
     system: System,
     usage_per_core: Vec<f32>,
     average_usage: f32,
     core_count: usize,
+    history: VecDeque<f32>, // Add history for graphing
 }
 
 impl CpuState {
@@ -18,6 +22,7 @@ impl CpuState {
             usage_per_core: Vec::new(),
             average_usage: 0.0,
             core_count: 0,
+            history: VecDeque::with_capacity(HISTORY_SIZE),
         }
     }
 
@@ -37,6 +42,12 @@ impl CpuState {
         } else {
             self.average_usage = 0.0;
         }
+
+        // Add current usage to history
+        self.history.push_back(self.average_usage);
+        if self.history.len() > HISTORY_SIZE {
+            self.history.pop_front();
+        }
     }
 
     pub fn get_average_usage(&self) -> f32 {
@@ -49,5 +60,10 @@ impl CpuState {
 
     pub fn get_core_count(&self) -> usize {
         self.core_count
+    }
+    
+    // Add method to get history data for graphs
+    pub fn get_history(&self) -> &VecDeque<f32> {
+        &self.history
     }
 }

@@ -18,6 +18,7 @@ pub struct App {
     config: Config,
     theme: Theme,
     should_quit: bool,
+    current_layout: LayoutView,
 }
 
 impl App {
@@ -28,6 +29,7 @@ impl App {
             config,
             theme,
             should_quit: false,
+            current_layout: LayoutView::Default,
         }
     }
 
@@ -100,17 +102,43 @@ impl App {
     fn handle_key(&mut self, key: KeyCode) {
         match key {
             KeyCode::Char('q') => self.should_quit = true,
-            KeyCode::Char('c') => self.cycle_theme(),
+            KeyCode::Char('c') => self.theme.cycle_next(), // Fixed: directly call cycle_next on theme
+            KeyCode::Char('g') => self.toggle_graph_view(),
+            KeyCode::Char('1') => self.current_layout = LayoutView::Default,
+            KeyCode::Char('2') => self.current_layout = LayoutView::GraphView,
+            KeyCode::Char('3') => self.current_layout = LayoutView::CpuFocused,
+            KeyCode::Char('4') => self.current_layout = LayoutView::MemoryFocused,
+            KeyCode::Char('5') => self.current_layout = LayoutView::Compact,
             // Add more key handlers for customization
             _ => {}
         }
     }
 
-    fn cycle_theme(&mut self) {
-        self.theme.cycle_next();
+    fn toggle_graph_view(&mut self) {
+        self.current_layout = match self.current_layout {
+            LayoutView::Default => LayoutView::GraphView,
+            LayoutView::GraphView => LayoutView::Default,
+            _ => LayoutView::Default,
+        };
     }
 
     fn render<B: Backend>(&self, frame: &mut ratatui::Frame<B>) {
-        crate::ui::layout::render(frame, &self.system, &self.config, &self.theme);
+        match self.current_layout {
+            LayoutView::Default => crate::ui::layout::render(frame, &self.system, &self.config, &self.theme),
+            LayoutView::GraphView => crate::ui::layout::render_with_graphs(frame, &self.system, &self.config, &self.theme),
+            LayoutView::CpuFocused => crate::ui::layout::render_cpu_focused(frame, &self.system, &self.config, &self.theme),
+            LayoutView::MemoryFocused => crate::ui::layout::render_memory_focused(frame, &self.system, &self.config, &self.theme),
+            LayoutView::Compact => crate::ui::layout::render_compact(frame, &self.system, &self.config, &self.theme),
+        }
     }
+}
+
+// Add enum for layout selection
+#[derive(Clone, Copy)]
+enum LayoutView {
+    Default,
+    GraphView,
+    CpuFocused,
+    MemoryFocused,
+    Compact,
 }

@@ -1,6 +1,8 @@
 use sysinfo::{NetworkExt, System, SystemExt};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::time::Instant;
+
+const HISTORY_SIZE: usize = 100;
 
 pub struct NetworkInterface {
     name: String,
@@ -14,6 +16,8 @@ pub struct NetworkInterface {
     receive_rate: f64,    // bytes per second
     transmit_rate: f64,   // bytes per second
     last_update: Instant,
+    receive_rate_history: VecDeque<f64>,
+    transmit_rate_history: VecDeque<f64>,
 }
 
 impl NetworkInterface {
@@ -29,6 +33,8 @@ impl NetworkInterface {
             receive_rate: 0.0,
             transmit_rate: 0.0,
             last_update: Instant::now(),
+            receive_rate_history: VecDeque::with_capacity(HISTORY_SIZE),
+            transmit_rate_history: VecDeque::with_capacity(HISTORY_SIZE),
         }
     }
 
@@ -56,6 +62,18 @@ impl NetworkInterface {
             self.receive_rate = (rx_diff as f64 / time_delta).min(f64::MAX / 2.0);
             self.transmit_rate = (tx_diff as f64 / time_delta).min(f64::MAX / 2.0);
         } // else keep previous rates
+        
+        // After calculating new rates, add to history
+        self.receive_rate_history.push_back(self.receive_rate);
+        self.transmit_rate_history.push_back(self.transmit_rate);
+        
+        if self.receive_rate_history.len() > HISTORY_SIZE {
+            self.receive_rate_history.pop_front();
+        }
+        
+        if self.transmit_rate_history.len() > HISTORY_SIZE {
+            self.transmit_rate_history.pop_front();
+        }
         
         self.last_update = now;
     }
@@ -86,6 +104,14 @@ impl NetworkInterface {
 
     pub fn get_transmit_rate(&self) -> f64 {
         self.transmit_rate
+    }
+    
+    pub fn get_receive_rate_history(&self) -> &VecDeque<f64> {
+        &self.receive_rate_history
+    }
+    
+    pub fn get_transmit_rate_history(&self) -> &VecDeque<f64> {
+        &self.transmit_rate_history
     }
 }
 

@@ -129,3 +129,43 @@ pub fn render_compact<B: Backend>(
     widgets::render_disk_widget(frame, right_chunks[0], &system.disk, theme);
     widgets::render_network_widget(frame, right_chunks[1], &system.network, theme);
 }
+
+// Add a new layout that includes graphs
+pub fn render_with_graphs<B: Backend>(
+    frame: &mut Frame<B>,
+    system: &SystemState,
+    config: &Config,
+    theme: &Theme,
+) {
+    // Create a 2x2 grid layout for graphs and data
+    let main_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(1)
+        .constraints([
+            Constraint::Percentage(50),  // Top half
+            Constraint::Percentage(50),  // Bottom half
+        ].as_ref())
+        .split(frame.size());
+    
+    let top_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(50),  // CPU
+            Constraint::Percentage(50),  // Memory
+        ].as_ref())
+        .split(main_chunks[0]);
+    
+    let bottom_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(50),  // Network
+            Constraint::Percentage(50),  // Processes
+        ].as_ref())
+        .split(main_chunks[1]);
+    
+    // Render the graphs and tables
+    widgets::render_cpu_graph(frame, top_chunks[0], &system.cpu, theme);
+    widgets::render_memory_graph(frame, top_chunks[1], &system.memory, theme);
+    widgets::render_network_graph(frame, bottom_chunks[0], &system.network, theme);
+    widgets::render_process_widget(frame, bottom_chunks[1], &system.processes, config, theme);
+}

@@ -1,10 +1,12 @@
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
+    style::{Modifier, Style, Color},
     text::Span,
     widgets::{
         Block, Borders, Gauge, Row, Table,
+        Chart, Dataset, GraphType, Axis,
     },
+    symbols,
     Frame,
 };
 
@@ -215,6 +217,235 @@ pub fn render_network_widget<B: ratatui::backend::Backend>(
         .widths(&widths);
     
     f.render_widget(table, area);
+}
+
+// CPU Graph Widget
+pub fn render_cpu_graph<B: ratatui::backend::Backend>(
+    f: &mut Frame<B>,
+    area: Rect,
+    cpu: &CpuState,
+    theme: &Theme,
+) {
+    let block = Block::default()
+        .title("CPU Usage History")
+        .borders(Borders::ALL);
+    
+    let cpu_history = cpu.get_history();
+    if cpu_history.is_empty() {
+        f.render_widget(block, area);
+        return;
+    }
+    
+    // Create data points from history
+    let data: Vec<(f64, f64)> = cpu_history
+        .iter()
+        .enumerate()
+        .map(|(i, &value)| (i as f64, value as f64))
+        .collect();
+    
+    let datasets = vec![
+        Dataset::default()
+            .name("CPU %")
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(theme.cpu_color(cpu.get_average_usage())))
+            .data(&data),
+    ];
+    
+    let chart = Chart::new(datasets)
+        .block(block)
+        .x_axis(
+            Axis::default()
+                .title(Span::styled("Time", Style::default().fg(Color::Gray)))
+                .style(Style::default().fg(Color::Gray))
+                .bounds([0.0, cpu_history.len() as f64])
+                .labels(vec![]),
+        )
+        .y_axis(
+            Axis::default()
+                .title(Span::styled("CPU %", Style::default().fg(Color::Gray)))
+                .style(Style::default().fg(Color::Gray))
+                .bounds([0.0, 100.0])
+                .labels(vec![
+                    Span::styled("0", Style::default().fg(Color::Gray)),
+                    Span::styled("50", Style::default().fg(Color::Gray)),
+                    Span::styled("100", Style::default().fg(Color::Gray)),
+                ]),
+        );
+    
+    f.render_widget(chart, area);
+}
+
+// Memory Graph Widget
+pub fn render_memory_graph<B: ratatui::backend::Backend>(
+    f: &mut Frame<B>,
+    area: Rect,
+    memory: &MemoryState,
+    theme: &Theme,
+) {
+    let block = Block::default()
+        .title("Memory & Swap History")
+        .borders(Borders::ALL);
+    
+    let mem_history = memory.get_memory_history();
+    let swap_history = memory.get_swap_history();
+    
+    if mem_history.is_empty() && swap_history.is_empty() {
+        f.render_widget(block, area);
+        return;
+    }
+    
+    // Determine the length to use (should be the same for both)
+    let length = std::cmp::max(mem_history.len(), swap_history.len());
+    
+    // Create data points from history
+    let mem_data: Vec<(f64, f64)> = mem_history
+        .iter()
+        .enumerate()
+        .map(|(i, &value)| (i as f64, value))
+        .collect();
+    
+    let swap_data: Vec<(f64, f64)> = swap_history
+        .iter()
+        .enumerate()
+        .map(|(i, &value)| (i as f64, value))
+        .collect();
+    
+    let datasets = vec![
+        Dataset::default()
+            .name("Memory %")
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(theme.memory_color(memory.get_memory_usage_percent() as f32)))
+            .data(&mem_data),
+        Dataset::default()
+            .name("Swap %")
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(Color::LightMagenta))
+            .data(&swap_data),
+    ];
+    
+    let chart = Chart::new(datasets)
+        .block(block)
+        .x_axis(
+            Axis::default()
+                .title(Span::styled("Time", Style::default().fg(Color::Gray)))
+                .style(Style::default().fg(Color::Gray))
+                .bounds([0.0, length as f64])
+                .labels(vec![]),
+        )
+        .y_axis(
+            Axis::default()
+                .title(Span::styled("Usage %", Style::default().fg(Color::Gray)))
+                .style(Style::default().fg(Color::Gray))
+                .bounds([0.0, 100.0])
+                .labels(vec![
+                    Span::styled("0", Style::default().fg(Color::Gray)),
+                    Span::styled("50", Style::default().fg(Color::Gray)),
+                    Span::styled("100", Style::default().fg(Color::Gray)),
+                ]),
+        );
+    
+    f.render_widget(chart, area);
+}
+
+// Network Graph Widget
+pub fn render_network_graph<B: ratatui::backend::Backend>(
+    f: &mut Frame<B>,
+    area: Rect,
+    network: &NetworkState,
+    theme: &Theme,
+) {
+    let block = Block::default()
+        .title("Network Traffic")
+        .borders(Borders::ALL);
+    
+    // Get the primary network interface or return if none
+    let interfaces = network.get_interfaces();
+    if interfaces.is_empty() {
+        f.render_widget(block, area);
+        return;
+    }
+    
+    // For simplicity, just show the first interface
+    let interface = interfaces[0];
+    let rx_history = interface.get_receive_rate_history();
+    let tx_history = interface.get_transmit_rate_history();
+    
+    if rx_history.is_empty() && tx_history.is_empty() {
+        f.render_widget(block, area);
+        return;
+    }
+    
+    // Determine the length to use (should be the same for both)
+    let length = std::cmp::max(rx_history.len(), tx_history.len());
+    
+    // Scale the data to make the chart more readable
+    // Find maximum value to auto-scale with explicit f64 type
+    let max_rx = rx_history.iter().fold(0.0_f64, |a, &b| f64::max(a, b));
+    let max_tx = tx_history.iter().fold(0.0_f64, |a, &b| f64::max(a, b));
+    let max_value = f64::max(max_rx, max_tx);
+    
+    // Create scaled data points from history
+    let rx_data: Vec<(f64, f64)> = rx_history
+        .iter()
+        .enumerate()
+        .map(|(i, &value)| {
+            let scaled = if max_value > 0.0 { (value / max_value) * 100.0 } else { 0.0 };
+            (i as f64, scaled)
+        })
+        .collect();
+    
+    let tx_data: Vec<(f64, f64)> = tx_history
+        .iter()
+        .enumerate()
+        .map(|(i, &value)| {
+            let scaled = if max_value > 0.0 { (value / max_value) * 100.0 } else { 0.0 };
+            (i as f64, scaled)
+        })
+        .collect();
+    
+    let datasets = vec![
+        Dataset::default()
+            .name(format!("RX: {}/s", format_bytes_rate(interface.get_receive_rate())))
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(Color::Blue))
+            .data(&rx_data),
+        Dataset::default()
+            .name(format!("TX: {}/s", format_bytes_rate(interface.get_transmit_rate())))
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(Color::Red))
+            .data(&tx_data),
+    ];
+    
+    let max_label = format_bytes_rate(max_value);
+    let half_label = format_bytes_rate(max_value / 2.0);
+    
+    let chart = Chart::new(datasets)
+        .block(block)
+        .x_axis(
+            Axis::default()
+                .title(Span::styled("Time", Style::default().fg(Color::Gray)))
+                .style(Style::default().fg(Color::Gray))
+                .bounds([0.0, length as f64])
+                .labels(vec![]),
+        )
+        .y_axis(
+            Axis::default()
+                .title(Span::styled("Throughput", Style::default().fg(Color::Gray)))
+                .style(Style::default().fg(Color::Gray))
+                .bounds([0.0, 100.0])
+                .labels(vec![
+                    Span::styled("0", Style::default().fg(Color::Gray)),
+                    Span::styled(half_label, Style::default().fg(Color::Gray)),
+                    Span::styled(max_label, Style::default().fg(Color::Gray)),
+                ]),
+        );
+    
+    f.render_widget(chart, area);
 }
 
 // Helper function to format bytes
