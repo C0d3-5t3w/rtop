@@ -1,6 +1,6 @@
-use sysinfo::{NetworkExt, System, SystemExt};
 use std::collections::{HashMap, VecDeque};
 use std::time::Instant;
+use sysinfo::{NetworkExt, System, SystemExt};
 
 const HISTORY_SIZE: usize = 100;
 
@@ -10,11 +10,11 @@ pub struct NetworkInterface {
     transmitted_bytes: u64,
     received_packets: u64,
     transmitted_packets: u64,
-    // For rate calculations
+
     prev_received_bytes: u64,
     prev_transmitted_bytes: u64,
-    receive_rate: f64,    // bytes per second
-    transmit_rate: f64,   // bytes per second
+    receive_rate: f64,
+    transmit_rate: f64,
     last_update: Instant,
     receive_rate_history: VecDeque<f64>,
     transmit_rate_history: VecDeque<f64>,
@@ -41,40 +41,36 @@ impl NetworkInterface {
     fn update(&mut self, network: &sysinfo::NetworkData) {
         let now = Instant::now();
         let time_delta = now.duration_since(self.last_update).as_secs_f64();
-        
-        // Store previous values
+
         self.prev_received_bytes = self.received_bytes;
         self.prev_transmitted_bytes = self.transmitted_bytes;
-        
-        // Update current values
+
         self.received_bytes = network.received();
         self.transmitted_bytes = network.transmitted();
         self.received_packets = network.packets_received();
         self.transmitted_packets = network.packets_transmitted();
-        
-        // Calculate rates with multiple safety checks
-        if time_delta > 0.001 {  // Avoid division by very small numbers
-            // Use saturating_sub to prevent underflow
+
+        if time_delta > 0.001 {
             let rx_diff = self.received_bytes.saturating_sub(self.prev_received_bytes);
-            let tx_diff = self.transmitted_bytes.saturating_sub(self.prev_transmitted_bytes);
-            
-            // Calculate rates with bounds checking
+            let tx_diff = self
+                .transmitted_bytes
+                .saturating_sub(self.prev_transmitted_bytes);
+
             self.receive_rate = (rx_diff as f64 / time_delta).min(f64::MAX / 2.0);
             self.transmit_rate = (tx_diff as f64 / time_delta).min(f64::MAX / 2.0);
-        } // else keep previous rates
-        
-        // After calculating new rates, add to history
+        }
+
         self.receive_rate_history.push_back(self.receive_rate);
         self.transmit_rate_history.push_back(self.transmit_rate);
-        
+
         if self.receive_rate_history.len() > HISTORY_SIZE {
             self.receive_rate_history.pop_front();
         }
-        
+
         if self.transmit_rate_history.len() > HISTORY_SIZE {
             self.transmit_rate_history.pop_front();
         }
-        
+
         self.last_update = now;
     }
 
@@ -105,11 +101,11 @@ impl NetworkInterface {
     pub fn get_transmit_rate(&self) -> f64 {
         self.transmit_rate
     }
-    
+
     pub fn get_receive_rate_history(&self) -> &VecDeque<f64> {
         &self.receive_rate_history
     }
-    
+
     pub fn get_transmit_rate_history(&self) -> &VecDeque<f64> {
         &self.transmit_rate_history
     }
@@ -124,27 +120,25 @@ impl NetworkState {
     pub fn new() -> Self {
         let mut system = System::new_all();
         system.refresh_networks_list();
-        
+
         let interfaces = system
             .networks()
             .into_iter()
-            .map(|(name, data)| {
-                (name.clone(), NetworkInterface::new(name, data))
-            })
+            .map(|(name, data)| (name.clone(), NetworkInterface::new(name, data)))
             .collect();
-        
+
         Self { system, interfaces }
     }
 
     pub fn update(&mut self) {
         self.system.refresh_networks();
-        
+
         for (name, data) in self.system.networks() {
             if let Some(interface) = self.interfaces.get_mut(name) {
                 interface.update(data);
             } else {
-                // New interface appeared
-                self.interfaces.insert(name.clone(), NetworkInterface::new(name, data));
+                self.interfaces
+                    .insert(name.clone(), NetworkInterface::new(name, data));
             }
         }
     }

@@ -33,14 +33,16 @@ impl Theme {
         self.colors.insert("cpu_medium".to_string(), Color::Yellow);
         self.colors.insert("cpu_high".to_string(), Color::Red);
         self.colors.insert("memory_low".to_string(), Color::Green);
-        self.colors.insert("memory_medium".to_string(), Color::Yellow);
+        self.colors
+            .insert("memory_medium".to_string(), Color::Yellow);
         self.colors.insert("memory_high".to_string(), Color::Red);
         self.colors.insert("disk_low".to_string(), Color::Green);
         self.colors.insert("disk_medium".to_string(), Color::Yellow);
         self.colors.insert("disk_high".to_string(), Color::Red);
         self.colors.insert("network_rx".to_string(), Color::Blue);
         self.colors.insert("network_tx".to_string(), Color::Magenta);
-        self.colors.insert("process_selected".to_string(), Color::Cyan);
+        self.colors
+            .insert("process_selected".to_string(), Color::Cyan);
         self.colors.insert("border".to_string(), Color::Gray);
         self.colors.insert("tab_active".to_string(), Color::Cyan);
         self.colors.insert("tab_inactive".to_string(), Color::Gray);
@@ -72,7 +74,6 @@ impl Theme {
     }
 
     pub fn custom() -> Self {
-        // This would ideally load from a config file
         Self::default_theme()
     }
 
@@ -92,11 +93,10 @@ impl Theme {
             "light" => "custom".to_string(),
             _ => "default".to_string(),
         };
-        
+
         *self = Self::from_name(&self.name);
     }
 
-    // Specific color utilities
     pub fn cpu_color(&self, usage: f32) -> Color {
         if usage < 50.0 {
             self.get_color("cpu_low")

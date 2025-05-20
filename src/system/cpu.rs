@@ -1,22 +1,22 @@
-use sysinfo::{CpuExt, System, SystemExt};
-use std::time::Duration;
 use std::collections::VecDeque;
+use std::time::Duration;
+use sysinfo::{CpuExt, System, SystemExt};
 
-const HISTORY_SIZE: usize = 100; // Store last 100 data points
+const HISTORY_SIZE: usize = 100;
 
 pub struct CpuState {
     system: System,
     usage_per_core: Vec<f32>,
     average_usage: f32,
     core_count: usize,
-    history: VecDeque<f32>, // Add history for graphing
+    history: VecDeque<f32>,
 }
 
 impl CpuState {
     pub fn new() -> Self {
         let mut system = System::new_all();
         system.refresh_cpu();
-        
+
         Self {
             system,
             usage_per_core: Vec::new(),
@@ -28,22 +28,25 @@ impl CpuState {
 
     pub fn update(&mut self) {
         self.system.refresh_cpu();
-        
-        // Reduce sleep time to prevent UI lag
+
         std::thread::sleep(Duration::from_millis(100));
         self.system.refresh_cpu();
-        
-        self.usage_per_core = self.system.cpus().iter().map(|cpu| cpu.cpu_usage().min(100.0)).collect();
+
+        self.usage_per_core = self
+            .system
+            .cpus()
+            .iter()
+            .map(|cpu| cpu.cpu_usage().min(100.0))
+            .collect();
         self.core_count = self.usage_per_core.len();
-        
-        // Avoid division by zero and ensure average is capped
+
         if self.core_count > 0 {
-            self.average_usage = (self.usage_per_core.iter().sum::<f32>() / self.core_count as f32).min(100.0);
+            self.average_usage =
+                (self.usage_per_core.iter().sum::<f32>() / self.core_count as f32).min(100.0);
         } else {
             self.average_usage = 0.0;
         }
 
-        // Add current usage to history
         self.history.push_back(self.average_usage);
         if self.history.len() > HISTORY_SIZE {
             self.history.pop_front();
@@ -61,8 +64,7 @@ impl CpuState {
     pub fn get_core_count(&self) -> usize {
         self.core_count
     }
-    
-    // Add method to get history data for graphs
+
     pub fn get_history(&self) -> &VecDeque<f32> {
         &self.history
     }

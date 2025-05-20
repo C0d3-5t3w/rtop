@@ -1,5 +1,5 @@
-use sysinfo::{ProcessExt, System, SystemExt, Pid};
 use std::collections::HashMap;
+use sysinfo::{Pid, ProcessExt, System, SystemExt};
 
 #[derive(Debug, Clone)]
 pub struct Process {
@@ -64,20 +64,19 @@ impl ProcessList {
     pub fn new() -> Self {
         let mut system = System::new_all();
         system.refresh_processes();
-        
+
         let processes = system
             .processes()
             .iter()
             .map(|(pid, process)| (*pid, Process::new(*pid, process)))
             .collect();
-        
+
         Self { system, processes }
     }
 
     pub fn update(&mut self) {
         self.system.refresh_processes();
-        
-        // Update existing processes and add new ones
+
         self.processes = self
             .system
             .processes()
@@ -97,22 +96,22 @@ impl ProcessList {
     pub fn get_sorted_by_cpu(&self, limit: Option<usize>) -> Vec<&Process> {
         let mut processes = self.get_processes();
         processes.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap());
-        
+
         if let Some(n) = limit {
             processes.truncate(n);
         }
-        
+
         processes
     }
 
     pub fn get_sorted_by_memory(&self, limit: Option<usize>) -> Vec<&Process> {
         let mut processes = self.get_processes();
         processes.sort_by(|a, b| b.memory_usage.cmp(&a.memory_usage));
-        
+
         if let Some(n) = limit {
             processes.truncate(n);
         }
-        
+
         processes
     }
 

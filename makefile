@@ -1,18 +1,14 @@
-# Default build target
 .PHONY: all
 all: build copy-assets
 
-# Development build
 .PHONY: dev
 dev:
 	cargo build
 
-# Release build
 .PHONY: build
 build:
 	cargo build --release
 
-# Copy assets to the appropriate build directory
 .PHONY: copy-assets
 copy-assets:
 	@echo "Copying assets..."
@@ -22,24 +18,20 @@ copy-assets:
 	@cp -r pkg/* target/release/pkg/ 2>/dev/null || :
 	@echo "Assets copied successfully!"
 
-# Run the application
 .PHONY: run
 run: dev copy-assets
 	cargo run
 
-# Run the release version
 .PHONY: run-release
 run-release: build copy-assets
 	./target/release/rtop
 
-# Clean build artifacts
 .PHONY: clean
 clean:
 	cargo clean
 	rm -rf target/debug/pkg
 	rm -rf target/release/pkg
 
-# Install the application
 .PHONY: install
 install: build copy-assets
 	@echo "Installing rtop..."
@@ -50,7 +42,6 @@ install: build copy-assets
 	@echo "rtop installed to $(HOME)/.local/bin/rtop"
 	@echo "Configuration files installed to $(HOME)/.config/rtop/"
 
-# Help command
 .PHONY: help
 help:
 	@echo "Available commands:"

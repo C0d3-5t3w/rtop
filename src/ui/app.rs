@@ -1,5 +1,5 @@
-use crate::system::SystemState;
 use crate::config::Config;
+use crate::system::SystemState;
 use crate::ui::theme::Theme;
 use anyhow::Result;
 use crossterm::{
@@ -11,7 +11,10 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     Terminal,
 };
-use std::{io, time::{Duration, Instant}};
+use std::{
+    io,
+    time::{Duration, Instant},
+};
 
 pub struct App {
     system: SystemState,
@@ -34,7 +37,6 @@ impl App {
     }
 
     pub fn run(&mut self) -> Result<()> {
-        // Setup terminal
         enable_raw_mode()?;
         let mut stdout = io::stdout();
         execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -44,7 +46,6 @@ impl App {
         let tick_rate = Duration::from_millis(self.config.update_interval);
         let res = self.run_app(&mut terminal, tick_rate);
 
-        // Restore terminal
         disable_raw_mode()?;
         execute!(
             terminal.backend_mut(),
@@ -60,9 +61,13 @@ impl App {
         Ok(())
     }
 
-    fn run_app<B: Backend>(&mut self, terminal: &mut Terminal<B>, tick_rate: Duration) -> Result<()> {
+    fn run_app<B: Backend>(
+        &mut self,
+        terminal: &mut Terminal<B>,
+        tick_rate: Duration,
+    ) -> Result<()> {
         let mut last_tick = Instant::now();
-        
+
         while !self.should_quit {
             terminal.draw(|f| self.render(f))?;
 
@@ -86,14 +91,11 @@ impl App {
     }
 
     fn update(&mut self) {
-        // Add try-catch equivalent to prevent crashes from system updates
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             self.system.update();
         })) {
-            Ok(_) => (), // Update succeeded
+            Ok(_) => (),
             Err(_) => {
-                // If system update fails, we'll just wait for next tick
-                // This prevents the app from crashing entirely
                 eprintln!("Error updating system metrics");
             }
         }
@@ -102,14 +104,14 @@ impl App {
     fn handle_key(&mut self, key: KeyCode) {
         match key {
             KeyCode::Char('q') => self.should_quit = true,
-            KeyCode::Char('c') => self.theme.cycle_next(), // Fixed: directly call cycle_next on theme
+            KeyCode::Char('c') => self.theme.cycle_next(),
             KeyCode::Char('g') => self.toggle_graph_view(),
             KeyCode::Char('1') => self.current_layout = LayoutView::Default,
             KeyCode::Char('2') => self.current_layout = LayoutView::GraphView,
             KeyCode::Char('3') => self.current_layout = LayoutView::CpuFocused,
             KeyCode::Char('4') => self.current_layout = LayoutView::MemoryFocused,
             KeyCode::Char('5') => self.current_layout = LayoutView::Compact,
-            // Add more key handlers for customization
+
             _ => {}
         }
     }
@@ -125,25 +127,44 @@ impl App {
     fn render<B: Backend>(&self, frame: &mut ratatui::Frame<B>) {
         match self.current_layout {
             LayoutView::Default => crate::ui::layout::render(
-                frame, &self.system, &self.config, &self.theme, "Default View"
+                frame,
+                &self.system,
+                &self.config,
+                &self.theme,
+                "Default View",
             ),
             LayoutView::GraphView => crate::ui::layout::render_with_graphs(
-                frame, &self.system, &self.config, &self.theme, "Graph View"
+                frame,
+                &self.system,
+                &self.config,
+                &self.theme,
+                "Graph View",
             ),
             LayoutView::CpuFocused => crate::ui::layout::render_cpu_focused(
-                frame, &self.system, &self.config, &self.theme, "CPU Focus"
+                frame,
+                &self.system,
+                &self.config,
+                &self.theme,
+                "CPU Focus",
             ),
             LayoutView::MemoryFocused => crate::ui::layout::render_memory_focused(
-                frame, &self.system, &self.config, &self.theme, "Memory Focus"
+                frame,
+                &self.system,
+                &self.config,
+                &self.theme,
+                "Memory Focus",
             ),
             LayoutView::Compact => crate::ui::layout::render_compact(
-                frame, &self.system, &self.config, &self.theme, "Compact View"
+                frame,
+                &self.system,
+                &self.config,
+                &self.theme,
+                "Compact View",
             ),
         }
     }
 }
 
-// Add enum for layout selection
 #[derive(Clone, Copy)]
 enum LayoutView {
     Default,

@@ -60,19 +60,19 @@ impl DiskState {
     pub fn new() -> Self {
         let mut system = System::new_all();
         system.refresh_disks_list();
-        
+
         let disks = system
             .disks()
             .iter()
             .map(|disk| DiskInfo::new(disk))
             .collect();
-        
+
         Self { system, disks }
     }
 
     pub fn update(&mut self) {
         self.system.refresh_disks();
-        
+
         self.disks = self
             .system
             .disks()

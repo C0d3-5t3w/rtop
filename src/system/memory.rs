@@ -1,5 +1,5 @@
-use sysinfo::{System, SystemExt};
 use std::collections::VecDeque;
+use sysinfo::{System, SystemExt};
 
 const HISTORY_SIZE: usize = 100;
 
@@ -17,7 +17,7 @@ impl MemoryState {
     pub fn new() -> Self {
         let mut system = System::new_all();
         system.refresh_memory();
-        
+
         Self {
             total_memory: system.total_memory(),
             used_memory: system.used_memory(),
@@ -35,18 +35,17 @@ impl MemoryState {
         self.used_memory = self.system.used_memory();
         self.total_swap = self.system.total_swap();
         self.used_swap = self.system.used_swap();
-        
-        // Update history for graphs
+
         let mem_percent = self.get_memory_usage_percent();
         let swap_percent = self.get_swap_usage_percent();
-        
+
         self.memory_history.push_back(mem_percent);
         self.swap_history.push_back(swap_percent);
-        
+
         if self.memory_history.len() > HISTORY_SIZE {
             self.memory_history.pop_front();
         }
-        
+
         if self.swap_history.len() > HISTORY_SIZE {
             self.swap_history.pop_front();
         }
@@ -81,12 +80,11 @@ impl MemoryState {
         }
         (self.used_swap as f64 / self.total_swap as f64) * 100.0
     }
-    
-    // Add methods to get history data
+
     pub fn get_memory_history(&self) -> &VecDeque<f64> {
         &self.memory_history
     }
-    
+
     pub fn get_swap_history(&self) -> &VecDeque<f64> {
         &self.swap_history
     }
