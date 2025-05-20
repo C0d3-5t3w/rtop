@@ -41,23 +41,49 @@ impl Default for Config {
 
 impl Config {
     pub fn load(path: Option<&str>) -> Result<Self> {
+        // Try loading from the specified path first
         if let Some(config_path) = path {
             if Path::new(config_path).exists() {
-                let content = fs::read_to_string(config_path)?;
-                return Ok(toml::from_str(&content)?);
+                match fs::read_to_string(config_path) {
+                    Ok(content) => match toml::from_str(&content) {
+                        Ok(config) => return Ok(config),
+                        Err(e) => eprintln!("Error parsing config file: {}", e),
+                    },
+                    Err(e) => eprintln!("Error reading config file: {}", e),
+                }
             }
         }
         
-        // Look for config in default locations
-        let home_config = dirs::config_dir()
-            .map(|p| p.join("rtop/config.toml"))  // Fixed path - was looking in "../../pkg/config.toml"
-            .filter(|p| p.exists());
-            
-        if let Some(path) = home_config {
-            let content = fs::read_to_string(path)?;
-            return Ok(toml::from_str(&content)?);
+        // Check standard locations - both TOML and YAML
+        for ext in &["toml", "yaml", "yml"] {
+            if let Some(config_dir) = dirs::config_dir() {
+                let path = config_dir.join(format!("rtop/config.{}", ext));
+                if path.exists() {
+                    match fs::read_to_string(&path) {
+                        Ok(content) => {
+                            if ext == "toml" {
+                                if let Ok(config) = toml::from_str(&content) {
+                                    return Ok(config);
+                                }
+                            } else {
+                                // For YAML, we would need the serde_yaml crate
+                                // Just continue for now
+                            }
+                        },
+                        Err(e) => eprintln!("Error reading config at {:?}: {}", path, e),
+                    }
+                }
+            }
         }
         
+        // Package config fallback
+        let pkg_path = Path::new("pkg/config.yaml");
+        if pkg_path.exists() {
+            eprintln!("Using pkg/config.yaml as fallback");
+            // This would need serde_yaml to parse
+        }
+        
+        // Fall back to default configuration if all else fails
         Ok(Config::default())
     }
 

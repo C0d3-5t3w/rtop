@@ -84,7 +84,17 @@ impl App {
     }
 
     fn update(&mut self) {
-        self.system.update();
+        // Add try-catch equivalent to prevent crashes from system updates
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            self.system.update();
+        })) {
+            Ok(_) => (), // Update succeeded
+            Err(_) => {
+                // If system update fails, we'll just wait for next tick
+                // This prevents the app from crashing entirely
+                eprintln!("Error updating system metrics");
+            }
+        }
     }
 
     fn handle_key(&mut self, key: KeyCode) {

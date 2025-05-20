@@ -46,14 +46,16 @@ impl NetworkInterface {
         self.received_packets = network.packets_received();
         self.transmitted_packets = network.packets_transmitted();
         
-        // Calculate rates (bytes per second) - prevent division by zero
-        if time_delta > 0.001 {  // Use a small epsilon instead of exact zero
-            self.receive_rate = (self.received_bytes.saturating_sub(self.prev_received_bytes)) as f64 / time_delta;
-            self.transmit_rate = (self.transmitted_bytes.saturating_sub(self.prev_transmitted_bytes)) as f64 / time_delta;
-        } else {
-            // If time delta is too small, keep previous rates
-            // This prevents division by very small numbers causing huge spikes
-        }
+        // Calculate rates with multiple safety checks
+        if time_delta > 0.001 {  // Avoid division by very small numbers
+            // Use saturating_sub to prevent underflow
+            let rx_diff = self.received_bytes.saturating_sub(self.prev_received_bytes);
+            let tx_diff = self.transmitted_bytes.saturating_sub(self.prev_transmitted_bytes);
+            
+            // Calculate rates with bounds checking
+            self.receive_rate = (rx_diff as f64 / time_delta).min(f64::MAX / 2.0);
+            self.transmit_rate = (tx_diff as f64 / time_delta).min(f64::MAX / 2.0);
+        } // else keep previous rates
         
         self.last_update = now;
     }

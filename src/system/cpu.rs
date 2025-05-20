@@ -24,13 +24,19 @@ impl CpuState {
     pub fn update(&mut self) {
         self.system.refresh_cpu();
         
-        // Wait a bit for accurate CPU measurements
-        std::thread::sleep(Duration::from_millis(250));
+        // Reduce sleep time to prevent UI lag
+        std::thread::sleep(Duration::from_millis(100));
         self.system.refresh_cpu();
         
-        self.usage_per_core = self.system.cpus().iter().map(|cpu| cpu.cpu_usage()).collect();
+        self.usage_per_core = self.system.cpus().iter().map(|cpu| cpu.cpu_usage().min(100.0)).collect();
         self.core_count = self.usage_per_core.len();
-        self.average_usage = self.usage_per_core.iter().sum::<f32>() / self.core_count as f32;
+        
+        // Avoid division by zero and ensure average is capped
+        if self.core_count > 0 {
+            self.average_usage = (self.usage_per_core.iter().sum::<f32>() / self.core_count as f32).min(100.0);
+        } else {
+            self.average_usage = 0.0;
+        }
     }
 
     pub fn get_average_usage(&self) -> f32 {
