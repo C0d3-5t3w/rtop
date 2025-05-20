@@ -46,7 +46,7 @@ install: build copy-assets
 	@mkdir -p $(HOME)/.local/bin
 	@cp target/release/rtop $(HOME)/.local/bin/
 	@mkdir -p $(HOME)/.config/rtop
-	@cp -r pkg/* $(HOME)/.config/rtop/ 2>/dev/null || :
+	@cp -r pkg $(HOME)/.config/rtop/ 2>/dev/null || :
 	@echo "rtop installed to $(HOME)/.local/bin/rtop"
 	@echo "Configuration files installed to $(HOME)/.config/rtop/"
 
