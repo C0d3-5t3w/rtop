@@ -64,12 +64,16 @@ sort_by: "cpu"
 |-----|--------|
 | q | Quit |
 | c | Cycle through color themes |
-| 1-4 | Switch between layout views |
+| 1-5 | Switch between layout views |
 | h/l | Navigate tabs |
 | j/k | Scroll through lists |
 
 For more details, see the [documentation](DOC.md).
 
-## License
+## License 📄
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+
+## Credits 🤘🏼
+
+- GitHub: [@C0d3-5t3w](https://github.com/C0d3-5t3w)
